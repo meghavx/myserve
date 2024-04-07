@@ -1,0 +1,10 @@
+.stack-work/
+myserve.cabal
+dist/
+dist-newstyle/
+cabal.project.local
+*.hi
+*.hie
+*.o
+.stack/
+*~

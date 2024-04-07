@@ -1,0 +1,12 @@
+services:
+  devdb:
+    container_name: devdb 
+    image: postgres:16-alpine
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: devdb 
+    ports:
+      - 54321:5432
