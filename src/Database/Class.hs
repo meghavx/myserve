@@ -6,7 +6,7 @@ module Database.Class (HasDb (..)) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, ask)
-import Data.Pool
+import Data.Pool (Pool, withResource)
 import Database.Beam.Postgres (Pg, runBeamPostgres)
 import Database.PostgreSQL.Simple (Connection)
 

@@ -7,4 +7,5 @@ cabal.project.local
 *.hie
 *.o
 .stack/
+jmeter.log
 *~
