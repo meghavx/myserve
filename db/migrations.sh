@@ -22,8 +22,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   create table request_log (
     log_id uuid,
     client_address varchar(50) not null,
-    request_headers json,
     path varchar(200) not null,
+    logged_at timestamptz default current_timestamp,
     primary key (log_id)
   );
   

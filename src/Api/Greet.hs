@@ -21,7 +21,7 @@ import Servant
 type Greet =
   "v1"
     :> "greet"
-    :> LogRequest '[StdoutLog]
+    :> LogRequest '[StdoutLog, DbLog]
     :> WithTokenAuth KeepToken
     :> Get '[JSON] GreetResponse
 

@@ -28,7 +28,11 @@ import Database.Schema.RequestLog as X
   ( RequestLog
   , RequestLogT (..)
   )
-import Database.Schema.User as X (User, UserId, UserT (..))
+import Database.Schema.User as X 
+  ( User
+  , UserId
+  , UserT (..)
+  )
 import GHC.Generics (Generic)
 
 data DevDb f = DevDb
@@ -56,7 +60,7 @@ devDb =
               tableModification
                 { logId = "log_id"
                 , clientAddr = "client_address"
-                , headers = "request_headers"
+                , loggedAt = "logged_at"
                 }
       , users =
           setEntityName "service_user"

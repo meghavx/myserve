@@ -23,7 +23,7 @@ import Database.Beam.Postgres (runBeamPostgres)
 import Database.PostgreSQL.Simple (Connection)
 import Database.Schema (devDb, requestLogs)
 import Database.Schema.RequestLog (RequestLog, mkRequestLog)
-import Network.Wai (rawPathInfo, remoteHost, requestHeaders)
+import Network.Wai (rawPathInfo, remoteHost)
 import Servant ((:>))
 import Servant.Server.Internal (HasContextEntry (..), HasServer (..))
 
@@ -68,7 +68,7 @@ instance
   route Proxy context delayed =
     route (Proxy :: Proxy api) context delayed <&> \app req respK -> do
       requestLog <-
-        mkRequestLog (remoteHost req) (requestHeaders req) (rawPathInfo req)
+        mkRequestLog (remoteHost req) (rawPathInfo req)
       let pool :: Pool Connection = getContextEntry context
       let logModes = nub $ getLogModes (Proxy :: Proxy modes)
       for_ logModes (logger pool requestLog)

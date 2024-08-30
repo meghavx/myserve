@@ -11,53 +11,46 @@
 
 module Database.Schema.RequestLog (RequestLogT (..), RequestLog, mkRequestLog) where
 
-import Data.Aeson (FromJSON, ToJSON (toJSON), object, (.=))
+import Data.Aeson (ToJSON (toJSON), object, (.=))
 import Data.ByteString.Char8 (ByteString, unpack)
-import Data.CaseInsensitive (original)
 import Data.Functor.Identity (Identity)
 import Data.UUID (UUID)
 import Data.UUID.V4 (nextRandom)
 import Database.Beam (Beamable, Columnar, Table (PrimaryKey, primaryKey))
-import Database.Beam.Postgres (PgJSON (..))
 import GHC.Generics (Generic)
-import qualified Network.HTTP.Types.Header as Network
 import Network.Socket (SockAddr)
-
-data RequestHeader = RequestHeader {name :: String, value :: String}
-  deriving (Generic, Show, ToJSON, FromJSON)
+import Control.Monad.IO.Class (liftIO)
+import Data.Time (getCurrentTime, UTCTime)
 
 data RequestLogT f = RequestLog
   { logId :: Columnar f UUID
   , clientAddr :: Columnar f String
-  , headers :: Columnar f (PgJSON [RequestHeader])
   , path :: Columnar f String
+  , loggedAt :: Columnar f UTCTime
   }
   deriving (Generic)
 
 instance ToJSON RequestLog where
-  toJSON (RequestLog logId' clientAddr' (PgJSON headers') path') =
+  toJSON (RequestLog logId' clientAddr' path' loggedAt') =
     object
       [ "logId" .= logId'
       , "clientAddr" .= clientAddr'
-      , "headers" .= headers'
       , "path" .= path'
+      , "loggedAt" .= loggedAt'
       ]
 
 mkRequestLog
-  :: SockAddr -> Network.RequestHeaders -> ByteString -> IO RequestLog
-mkRequestLog sockAddr headers' path' = do
+  :: SockAddr -> ByteString -> IO RequestLog
+mkRequestLog sockAddr path' = do
   logId <- nextRandom
+  logTime <- liftIO getCurrentTime
   pure $
     RequestLog
       { logId
       , clientAddr = show sockAddr
-      , headers = PgJSON $ toRequestHeaders headers'
       , path = unpack path'
+      , loggedAt = logTime
       }
- where
-  toRequestHeaders =
-    fmap
-      (\(k, v) -> RequestHeader (unpack $ original k) (unpack v))
 
 type RequestLog = RequestLogT Identity
 
