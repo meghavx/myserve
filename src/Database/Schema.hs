@@ -19,15 +19,6 @@ import Database.Beam
   , tableModification
   , withDbModification
   )
-import Database.Schema.AuthToken as X
-  ( AuthToken
-  , AuthTokenT (..)
-  , Token
-  )
-import Database.Schema.RequestLog as X
-  ( RequestLog
-  , RequestLogT (..)
-  )
 import Database.Schema.User as X 
   ( User
   , UserId
@@ -36,9 +27,8 @@ import Database.Schema.User as X
 import GHC.Generics (Generic)
 
 data DevDb f = DevDb
-  { authTokens :: f (TableEntity AuthTokenT)
-  , requestLogs :: f (TableEntity RequestLogT)
-  , users :: f (TableEntity UserT)
+  { 
+    users :: f (TableEntity UserT)
   }
   deriving (Generic, Database be)
 
@@ -46,23 +36,7 @@ devDb :: DatabaseSettings be DevDb
 devDb =
   defaultDbSettings
     `withDbModification` dbModification
-      { authTokens =
-          setEntityName "auth_token"
-            <> modifyTableFields
-              tableModification
-                { token = "auth_token"
-                , createdAt = "created_at"
-                , createdBy = "created_by"
-                }
-      , requestLogs =
-          setEntityName "request_log"
-            <> modifyTableFields
-              tableModification
-                { logId = "log_id"
-                , clientAddr = "client_address"
-                , loggedAt = "logged_at"
-                }
-      , users =
+      { users =
           setEntityName "service_user"
             <> modifyTableFields
               tableModification
