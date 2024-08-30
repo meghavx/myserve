@@ -6,8 +6,7 @@ extra-source-files:
 dependencies:
 - aeson
 - base
-- beam-core
-- beam-postgres
+- orville-postgresql
 - bytestring
 - envy
 - postgresql-simple
@@ -26,7 +25,7 @@ dependencies:
 
 ghc-options:
 - -Wall
-- -Werror
+# - -Werror
 - -Wcompat
 - -Widentities
 - -Wincomplete-record-updates

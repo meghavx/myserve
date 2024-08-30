@@ -1,45 +1,50 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
-module Database.Schema.User (UserT (..), User, UserId) where
+module Database.Schema.User 
+  ( User (..)
+  , UserId
+  , userTable
+  ) where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Functor.Identity (Identity)
 import Data.Text (Text)
 import Data.Time (UTCTime)
-import Database.Beam
-  ( Beamable
-  , Columnar
-  , Table (PrimaryKey, primaryKey)
-  )
 import GHC.Generics (Generic)
+import Data.Aeson (FromJSON, ToJSON)
+import qualified Orville.PostgreSQL as O
 
-data UserT f = User
-  { userId :: Columnar f Text
-  , joined :: Columnar f UTCTime
-  , password :: Columnar f Text
+newtype UserId = UserId Text 
+  deriving (Show, Generic, ToJSON, FromJSON)
+
+data User = User
+  { userId :: UserId
+  , joined :: UTCTime
+  , password :: Text
   }
-  deriving (Generic)
+  deriving (Show, Generic, ToJSON, FromJSON)
 
-type User = UserT Identity
+userMarshaller :: O.SqlMarshaller User User
+userMarshaller = 
+  User
+    <$> O.marshallField userId userIdField
+    <*> O.marshallField joined joinedField
+    <*> O.marshallField password passwordField
 
-instance Beamable UserT
+userIdField :: O.FieldDefinition O.NotNull UserId
+userIdField = 
+  O.coerceField (O.unboundedTextField "user_id")
 
-deriving instance Show User
+joinedField :: O.FieldDefinition O.NotNull UTCTime
+joinedField = 
+  O.utcTimestampField "joined"
 
-deriving instance ToJSON User
+passwordField :: O.FieldDefinition O.NotNull Text
+passwordField = 
+  O.unboundedTextField "password_argon2id"
 
-deriving instance FromJSON User
-
-instance Table UserT where
-  data PrimaryKey UserT f = UserId (Columnar f Text)
-    deriving (Generic, Beamable)
-  primaryKey = UserId . userId
-
-type UserId = PrimaryKey UserT Identity
-
-deriving instance Show UserId
+userTable :: O.TableDefinition (O.HasKey UserId) User User
+userTable = 
+  O.mkTableDefinition 
+    "service_user"
+    (O.primaryKey userIdField)
+    userMarshaller

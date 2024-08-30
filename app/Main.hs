@@ -8,10 +8,7 @@
 
 module Main (main) where
 
-import Data.ByteString (ByteString)
-import Data.Pool (createPool)
 import Data.Proxy (Proxy (Proxy))
-import Database.PostgreSQL.Simple (close, connectPostgreSQL)
 import GHC.Generics (Generic)
 import Network.Wai.Handler.Warp (run)
 import Servant (Context (..), serveWithContext)
@@ -19,10 +16,11 @@ import Server (Api, server)
 import System.Envy (FromEnv (..), decodeEnv)
 import System.Exit (exitFailure)
 import System.IO (hPutStrLn, stderr)
+import qualified Orville.PostgreSQL as O
 
 data Env = Env
   { serverPort :: Int
-  , pgConnectString :: ByteString
+  , pgConnectString :: String
   , authTokenTimeoutSeconds :: Integer
   }
   deriving (Generic, FromEnv)
@@ -40,12 +38,14 @@ main = do
             exitFailure
         )
   pool <-
-    createPool
-      (connectPostgreSQL pgConnectString)
-      close
-      1 -- stripes
-      60 -- keep alive
-      10 -- connections per stripe
+    O.createConnectionPool
+      O.ConnectionOptions
+        { O.connectionString = pgConnectString
+        , O.connectionNoticeReporting = O.DisableNoticeReporting
+        , O.connectionPoolStripes = O.OneStripePerCapability
+        , O.connectionPoolMaxConnections = O.MaxConnectionsPerStripe 10
+        , O.connectionPoolLingerTime = 60
+        }
   run serverPort $
     Servant.serveWithContext
       (Proxy @Api)

@@ -7,3 +7,7 @@ packages:
 
 extra-deps:
   - os-string-2.0.2
+
+  - git: https://github.com/flipstone/orville
+    commit: cf41ce07995597ba9c6c08658812ce2bd4abf313
+    subdir: orville-postgresql

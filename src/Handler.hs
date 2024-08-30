@@ -10,12 +10,11 @@ import Control.Monad.Reader
   , ReaderT
   , runReaderT
   )
-import Data.Pool (Pool)
-import Database.PostgreSQL.Simple (Connection)
+import Orville.PostgreSQL.Raw.Connection (ConnectionPool)
 import qualified Servant
 
 -- | A monad for handlers to run in that has everything we need
-type MyServeHandler = HandlerM (Pool Connection)
+type MyServeHandler = HandlerM (ConnectionPool)
 
 -- | Servant.Handler with a dash of ReaderT
 newtype HandlerM env a = HandlerM {runHandlerM :: ReaderT env Servant.Handler a}

@@ -11,6 +11,19 @@ packages:
       size: 2217
   original:
     hackage: os-string-2.0.2
+- completed:
+    commit: cf41ce07995597ba9c6c08658812ce2bd4abf313
+    git: https://github.com/flipstone/orville
+    name: orville-postgresql
+    pantry-tree:
+      sha256: a88b754afb11c5182668f425674054dc07da8dac2ed44a7d3a0964ee0e69d613
+      size: 16722
+    subdir: orville-postgresql
+    version: 1.1.0.0
+  original:
+    commit: cf41ce07995597ba9c6c08658812ce2bd4abf313
+    git: https://github.com/flipstone/orville
+    subdir: orville-postgresql
 snapshots:
 - completed:
     sha256: 5a59b2a405b3aba3c00188453be172b85893cab8ebc352b1ef58b0eae5d248a2

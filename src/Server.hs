@@ -6,19 +6,19 @@ module Server
   ) where
 
 import Api (Api, handlers)
-import Data.Pool (Pool)
 import Data.Proxy (Proxy (Proxy))
-import Database.PostgreSQL.Simple (Connection)
+
+import Orville.PostgreSQL.Raw.Connection (ConnectionPool)
 import Handler (toServantHandler)
 import Servant (Server)
 import Servant.Server.Internal
   ( HasServer (hoistServerWithContext)
   )
 
-server :: Pool Connection -> Server Api
+server :: ConnectionPool -> Server Api
 server pool =
   hoistServerWithContext
     (Proxy :: Proxy Api)
-    (Proxy :: Proxy '[Pool Connection, Integer])
+    (Proxy :: Proxy '[ConnectionPool, Integer])
     (toServantHandler pool)
     handlers
