@@ -25,7 +25,7 @@ dependencies:
 
 ghc-options:
 - -Wall
-# - -Werror
+- -Werror
 - -Wcompat
 - -Widentities
 - -Wincomplete-record-updates

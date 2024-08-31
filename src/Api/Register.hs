@@ -11,7 +11,6 @@ module Api.Register (Register, register) where
 
 import Control.Monad (unless)
 import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Reader (ask)
 import Data.Aeson (FromJSON)
 import Data.Password.Argon2
   ( hashPassword
@@ -21,6 +20,7 @@ import Data.Password.Argon2
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (getCurrentTime)
+import Database.Class (HasDb (runDb))
 import Database.Schema 
   ( User (..)
   , UserId
@@ -38,7 +38,10 @@ import Servant
   , throwError
   , (:>)
   )
-import qualified Orville.PostgreSQL as O
+import Orville.PostgreSQL
+  ( insertEntity
+  , findEntity
+  )
 
 type Register =
   "v1"
@@ -61,12 +64,11 @@ register (RegisterRequest{..}) = do
         { errBody = "Password must be at least 8 digits in length."
         }
 
-  pool <- ask
-  userIdMatches <- liftIO $ O.runOrville pool $ do
-    O.findEntity userTable requestedUserId
+  userIdMatches <- runDb $
+    findEntity userTable requestedUserId
   case userIdMatches of
     Just _ -> do
-      throwError $ 
+      throwError $
         err412 
           { errBody = "That user ID is already taken." 
           }
@@ -75,8 +77,8 @@ register (RegisterRequest{..}) = do
       hashedPassword <-
         fmap unPasswordHash <$> hashPassword $
           mkPassword password
-      liftIO $ O.runOrville pool $ do
-        O.insertEntity userTable
+      runDb $
+        insertEntity userTable
           User
             { userId = requestedUserId
             , joined
