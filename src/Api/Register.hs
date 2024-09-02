@@ -23,7 +23,6 @@ import Data.Time (getCurrentTime)
 import Database.Class (HasDb (runDb))
 import Database.Schema 
   ( User (..)
-  , UserId
   , userTable
   )
 import GHC.Generics (Generic)
@@ -50,7 +49,7 @@ type Register =
     :> Post '[JSON] NoContent
 
 data RegisterRequest = RegisterRequest
-  { requestedUserId :: UserId
+  { requestedUserId :: Text
   , password :: Text 
   }
   deriving (Generic, FromJSON)

@@ -3,7 +3,6 @@
 
 module Database.Schema.User 
   ( User (..)
-  , UserId
   , userTable
   ) where
 
@@ -13,11 +12,8 @@ import GHC.Generics (Generic)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Orville.PostgreSQL as O
 
-newtype UserId = UserId Text 
-  deriving (Show, Generic, ToJSON, FromJSON)
-
 data User = User
-  { userId :: UserId
+  { userId :: Text
   , joined :: UTCTime
   , password :: Text
   }
@@ -30,7 +26,7 @@ userMarshaller =
     <*> O.marshallField joined joinedField
     <*> O.marshallField password passwordField
 
-userIdField :: O.FieldDefinition O.NotNull UserId
+userIdField :: O.FieldDefinition O.NotNull Text
 userIdField = 
   O.coerceField (O.unboundedTextField "user_id")
 
@@ -42,7 +38,7 @@ passwordField :: O.FieldDefinition O.NotNull Text
 passwordField = 
   O.unboundedTextField "password_argon2id"
 
-userTable :: O.TableDefinition (O.HasKey UserId) User User
+userTable :: O.TableDefinition (O.HasKey Text) User User
 userTable = 
   O.mkTableDefinition 
     "service_user"
