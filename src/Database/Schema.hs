@@ -6,3 +6,8 @@ import Database.Schema.User as X
   ( User (..)
   , userTable
   )
+import Database.Schema.AuthToken as X 
+  ( AuthToken (..)
+  , authTokenTable
+  , createdByField
+  )
