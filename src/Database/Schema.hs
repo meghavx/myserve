@@ -11,3 +11,8 @@ import Database.Schema.AuthToken as X
   , authTokenTable
   , createdByField
   )
+import Database.Schema.RequestLog as X
+  ( RequestLog (..)
+  , requestLogTable
+  , mkRequestLog
+  )
