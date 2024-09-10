@@ -17,6 +17,7 @@ import System.Envy (FromEnv (..), decodeEnv)
 import System.Exit (exitFailure)
 import System.IO (hPutStrLn, stderr)
 import qualified Orville.PostgreSQL as O
+import Database.Schema (migrateSchema)
 
 data Env = Env
   { serverPort :: Int
@@ -46,6 +47,9 @@ main = do
         , O.connectionPoolMaxConnections = O.MaxConnectionsPerStripe 10
         , O.connectionPoolLingerTime = 60
         }
+   -- Run database migration
+  O.runOrville pool migrateSchema
+
   run serverPort $
     Servant.serveWithContext
       (Proxy @Api)

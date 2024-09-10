@@ -1,5 +1,6 @@
 module Database.Schema
   ( module X
+  , migrateSchema
   ) where
 
 import Database.Schema.User as X 
@@ -16,3 +17,16 @@ import Database.Schema.RequestLog as X
   , requestLogTable
   , mkRequestLog
   )
+
+import qualified Orville.PostgreSQL as O
+import qualified Orville.PostgreSQL.AutoMigration as AutoMigration
+
+-- Function to perform schema migration
+migrateSchema :: O.Orville ()
+migrateSchema = 
+  AutoMigration.autoMigrateSchema 
+    AutoMigration.defaultOptions
+    [ AutoMigration.SchemaTable userTable
+    , AutoMigration.SchemaTable authTokenTable
+    , AutoMigration.SchemaTable requestLogTable
+    ]
