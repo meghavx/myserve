@@ -27,7 +27,11 @@ import Database.Schema
   , RequestLog
   , mkRequestLog
   )
-import Network.Wai (rawPathInfo, remoteHost)
+import Network.Wai 
+  ( rawPathInfo
+  , remoteHost
+  , requestMethod
+  )
 import Servant ((:>))
 import Servant.Server.Internal (HasContextEntry (..), HasServer (..))
 
@@ -73,15 +77,17 @@ instance
     hoistServerWithContext (Proxy @api)
   route Proxy context delayed =
     route (Proxy @api) context delayed <&> \app req respK -> do
-      requestLog <-
-        mkRequestLog (remoteHost req) (rawPathInfo req)
       let pool :: ConnectionPool = getContextEntry context
-          logModes = nub $ getLogModes (Proxy @modes)
+      let logModes = nub $ getLogModes (Proxy @modes)
+      requestLog <-
+        mkRequestLog
+          (requestMethod req)
+          (rawPathInfo req)
+          (remoteHost req)
       for_ logModes (logger pool requestLog)
       app req respK
-   where
-    logger
-      :: ConnectionPool -> RequestLog -> LogMode -> IO ()
+   where 
+    logger :: ConnectionPool -> RequestLog -> LogMode -> IO ()
     logger _ requestLog StdoutLog = 
       putStrLn $ "Request: " <> (unpack $ toStrict $ encode requestLog)
     logger pool requestLog DbLog =

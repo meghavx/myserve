@@ -25,11 +25,13 @@ import GHC.Generics (Generic)
 import Network.Socket (SockAddr)
 import Control.Monad.IO.Class (liftIO)
 import Data.Time (UTCTime, getCurrentTime)
+import Network.HTTP.Types (Method)
 
 data RequestLog = RequestLog
   { logId :: UUID
-  , clientAddr :: Text
+  , method :: Maybe Text
   , path :: Text
+  , clientAddr :: Text
   , loggedAt :: UTCTime
   }
   deriving (Show, Generic, ToJSON)
@@ -38,21 +40,26 @@ requestLogMarshaller :: O.SqlMarshaller RequestLog RequestLog
 requestLogMarshaller = 
   RequestLog
     <$> O.marshallField logId logIdField
-    <*> O.marshallField clientAddr clientAddrField
+    <*> O.marshallField method methodField
     <*> O.marshallField path pathField
+    <*> O.marshallField clientAddr clientAddrField
     <*> O.marshallField loggedAt loggedAtField
 
 logIdField :: O.FieldDefinition O.NotNull UUID
 logIdField = 
   O.coerceField (O.uuidField "log_id")
 
-clientAddrField :: O.FieldDefinition O.NotNull Text
-clientAddrField = 
-  O.unboundedTextField "client_address"
+methodField :: O.FieldDefinition O.Nullable (Maybe Text)
+methodField = 
+  O.nullableField (O.unboundedTextField "method")
 
 pathField :: O.FieldDefinition O.NotNull Text
 pathField = 
   O.unboundedTextField "path"
+
+clientAddrField :: O.FieldDefinition O.NotNull Text
+clientAddrField = 
+  O.unboundedTextField "client_address"
 
 loggedAtField :: O.FieldDefinition O.NotNull UTCTime
 loggedAtField = 
@@ -65,14 +72,20 @@ requestLogTable =
     (O.primaryKey logIdField)
     requestLogMarshaller
 
-mkRequestLog :: SockAddr -> ByteString -> IO RequestLog
-mkRequestLog sockAddr path' = do
+mkRequestLog 
+  :: Method
+  -> ByteString
+  -> SockAddr
+  -> IO RequestLog
+mkRequestLog method' path' sockAddr = do
   logId <- nextRandom
   logTime <- liftIO getCurrentTime
   pure $
     RequestLog
       { logId
+      , method = Just $ fromByteStringToText method'
+      , path = fromByteStringToText path'
       , clientAddr = pack $ show sockAddr
-      , path = pack $ unpack path'
       , loggedAt = logTime
       }
+    where fromByteStringToText = pack . unpack
