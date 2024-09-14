@@ -20,20 +20,28 @@ import Data.Proxy (Proxy (Proxy))
 import Orville.PostgreSQL 
   ( ConnectionPool
   , runOrville
+  , findEntity
   , insertEntity
   )
 import Database.Schema
   ( requestLogTable
   , RequestLog
   , mkRequestLog
+  , authTokenTable
+  , AuthToken (createdBy)
   )
-import Network.Wai 
-  ( rawPathInfo
+import Network.Wai
+  ( Request
+  , requestHeaders
+  , rawPathInfo
   , remoteHost
   , requestMethod
   )
 import Servant ((:>))
 import Servant.Server.Internal (HasContextEntry (..), HasServer (..))
+import Data.UUID (UUID, fromASCIIBytes, nil)
+import Data.Maybe (fromMaybe)
+import Data.Text (pack)
 
 -- | Log an incoming request
 data LogRequest (modes :: [LogMode])
@@ -78,15 +86,22 @@ instance
   route Proxy context delayed =
     route (Proxy @api) context delayed <&> \app req respK -> do
       let pool :: ConnectionPool = getContextEntry context
-      let logModes = nub $ getLogModes (Proxy @modes)
+          logModes = nub $ getLogModes (Proxy @modes)
+      mAuthRecord <- runOrville pool $ 
+        findEntity authTokenTable (authToken req)
+      let userId = fromMaybe (pack "0") $ fmap createdBy mAuthRecord 
       requestLog <-
         mkRequestLog
           (requestMethod req)
           (rawPathInfo req)
           (remoteHost req)
+          userId
       for_ logModes (logger pool requestLog)
       app req respK
    where 
+    authToken :: Request -> UUID
+    authToken = fromMaybe nil . fromASCIIBytes . snd . head . requestHeaders
+
     logger :: ConnectionPool -> RequestLog -> LogMode -> IO ()
     logger _ requestLog StdoutLog = 
       putStrLn $ "Request: " <> (unpack $ toStrict $ encode requestLog)

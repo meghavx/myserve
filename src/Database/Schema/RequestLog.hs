@@ -32,6 +32,7 @@ data RequestLog = RequestLog
   , method :: Maybe Text
   , path :: Text
   , clientAddr :: Text
+  , callerUserId :: Maybe Text
   , loggedAt :: UTCTime
   }
   deriving (Show, Generic, ToJSON)
@@ -43,6 +44,7 @@ requestLogMarshaller =
     <*> O.marshallField method methodField
     <*> O.marshallField path pathField
     <*> O.marshallField clientAddr clientAddrField
+    <*> O.marshallField callerUserId callerUserIdField
     <*> O.marshallField loggedAt loggedAtField
 
 logIdField :: O.FieldDefinition O.NotNull UUID
@@ -61,6 +63,10 @@ clientAddrField :: O.FieldDefinition O.NotNull Text
 clientAddrField = 
   O.unboundedTextField "client_address"
 
+callerUserIdField :: O.FieldDefinition O.Nullable (Maybe Text)
+callerUserIdField = 
+  O.nullableField (O.unboundedTextField "caller_user_id")
+
 loggedAtField :: O.FieldDefinition O.NotNull UTCTime
 loggedAtField = 
   O.utcTimestampField "logged_at"
@@ -76,8 +82,9 @@ mkRequestLog
   :: Method
   -> ByteString
   -> SockAddr
+  -> Text
   -> IO RequestLog
-mkRequestLog method' path' sockAddr = do
+mkRequestLog method' path' sockAddr userId = do
   logId <- nextRandom
   logTime <- liftIO getCurrentTime
   pure $
@@ -86,6 +93,7 @@ mkRequestLog method' path' sockAddr = do
       , method = Just $ fromByteStringToText method'
       , path = fromByteStringToText path'
       , clientAddr = pack $ show sockAddr
+      , callerUserId = Just userId
       , loggedAt = logTime
       }
     where fromByteStringToText = pack . unpack
