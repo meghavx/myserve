@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module LogRequest (LogRequest, LogMode (..)) where
 
@@ -31,8 +32,7 @@ import Database.Schema
   , AuthToken (createdBy)
   )
 import Network.Wai
-  ( Request
-  , requestHeaders
+  ( requestHeaders
   , rawPathInfo
   , remoteHost
   , requestMethod
@@ -41,7 +41,9 @@ import Servant ((:>))
 import Servant.Server.Internal (HasContextEntry (..), HasServer (..))
 import Data.UUID (UUID, fromASCIIBytes, nil)
 import Data.Maybe (fromMaybe)
-import Data.Text (pack)
+import qualified Data.Text as T
+import qualified Data.ByteString as BS
+import Network.HTTP.Types.Header (RequestHeaders, HeaderName)
 
 -- | Log an incoming request
 data LogRequest (modes :: [LogMode])
@@ -87,9 +89,11 @@ instance
     route (Proxy @api) context delayed <&> \app req respK -> do
       let pool :: ConnectionPool = getContextEntry context
           logModes = nub $ getLogModes (Proxy @modes)
+          reqHeaders = requestHeaders req
+          token = authToken reqHeaders
       mAuthRecord <- runOrville pool $ 
-        findEntity authTokenTable (authToken req)
-      let userId = fromMaybe (pack "0") $ fmap createdBy mAuthRecord 
+        findEntity authTokenTable token
+      let userId = fromMaybe T.empty $ createdBy <$> mAuthRecord 
       requestLog <-
         mkRequestLog
           (requestMethod req)
@@ -99,8 +103,11 @@ instance
       for_ logModes (logger pool requestLog)
       app req respK
    where 
-    authToken :: Request -> UUID
-    authToken = fromMaybe nil . fromASCIIBytes . snd . head . requestHeaders
+    authToken :: RequestHeaders -> UUID
+    authToken = 
+      let lookUpToken = fromMaybe BS.empty . lookup ("Authorization" :: HeaderName)
+          toUUID = fromMaybe nil . fromASCIIBytes
+      in toUUID . lookUpToken
 
     logger :: ConnectionPool -> RequestLog -> LogMode -> IO ()
     logger _ requestLog StdoutLog = 
