@@ -15,17 +15,31 @@ module Database.Schema.RequestLog
   , mkRequestLog
   ) where
 
-import Data.Aeson (ToJSON)
-import Data.ByteString.Char8 (ByteString, unpack)
-import Data.Text (Text, pack)
+import Data.Aeson (FromJSON, ToJSON, encode, decode)
+import Data.ByteString (ByteString)
+import Data.ByteString.Lazy (toStrict, fromStrict)
+import qualified Data.ByteString.Char8 as BS
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 import Data.UUID (UUID)
 import Data.UUID.V4 (nextRandom)
 import qualified Orville.PostgreSQL as O
+import qualified Orville.PostgreSQL.Raw.SqlValue as SqlValue
 import GHC.Generics (Generic)
 import Network.Socket (SockAddr)
 import Control.Monad.IO.Class (liftIO)
 import Data.Time (UTCTime, getCurrentTime)
 import Network.HTTP.Types (Method)
+import Network.HTTP.Types.Header (RequestHeaders)
+import Data.CaseInsensitive (original)
+import Data.Maybe (fromMaybe)
+
+data RequestHeader = RequestHeader 
+  { name :: String
+  , value :: String
+  }
+  deriving (Show, Generic, ToJSON, FromJSON)
 
 data RequestLog = RequestLog
   { logId :: UUID
@@ -33,9 +47,10 @@ data RequestLog = RequestLog
   , path :: Text
   , clientAddr :: Text
   , callerUserId :: Maybe Text
+  , headers :: Maybe [RequestHeader]
   , loggedAt :: UTCTime
   }
-  deriving (Show, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON, FromJSON)
 
 requestLogMarshaller :: O.SqlMarshaller RequestLog RequestLog
 requestLogMarshaller = 
@@ -45,6 +60,7 @@ requestLogMarshaller =
     <*> O.marshallField path pathField
     <*> O.marshallField clientAddr clientAddrField
     <*> O.marshallField callerUserId callerUserIdField
+    <*> O.marshallField headers headersField
     <*> O.marshallField loggedAt loggedAtField
 
 logIdField :: O.FieldDefinition O.NotNull UUID
@@ -67,6 +83,27 @@ callerUserIdField :: O.FieldDefinition O.Nullable (Maybe Text)
 callerUserIdField = 
   O.nullableField (O.unboundedTextField "caller_user_id")
 
+headersField :: O.FieldDefinition O.Nullable (Maybe [RequestHeader])
+headersField = 
+  O.nullableField (myJsonbField toSql fromSql "headers")
+    where
+      toSql = SqlValue.fromText . decodeUtf8 . toStrict . encode
+      fromSql = fmap (fromMaybe [] . decode . fromStrict . encodeUtf8) . SqlValue.toText
+
+myJsonbField 
+  :: (a -> SqlValue.SqlValue) 
+  -> (SqlValue.SqlValue -> Either String a) 
+  -> String 
+  -> O.FieldDefinition O.NotNull a
+myJsonbField toSql fromSql fieldName =
+  O.fieldOfType
+    (O.jsonb
+      { O.sqlTypeToSql = toSql
+      , O.sqlTypeFromSql = fromSql
+      }
+    )
+    fieldName
+
 loggedAtField :: O.FieldDefinition O.NotNull UTCTime
 loggedAtField = 
   O.utcTimestampField "logged_at"
@@ -83,17 +120,25 @@ mkRequestLog
   -> ByteString
   -> SockAddr
   -> Text
+  -> RequestHeaders
   -> IO RequestLog
-mkRequestLog method' path' sockAddr userId = do
+mkRequestLog method' path' sockAddr' userId' headers' = do
   logId <- nextRandom
   logTime <- liftIO getCurrentTime
   pure $
     RequestLog
       { logId
-      , method = Just $ fromByteStringToText method'
-      , path = fromByteStringToText path'
-      , clientAddr = pack $ show sockAddr
-      , callerUserId = Just userId
+      , method = Just $ decodeUtf8 method'
+      , path = decodeUtf8 path'
+      , clientAddr = T.pack $ show sockAddr'
+      , callerUserId = Just userId'
+      , headers = Just $ toRequestHeaders headers'
       , loggedAt = logTime
       }
-    where fromByteStringToText = pack . unpack
+    where 
+      toRequestHeaders = fmap $
+        \(k, v) -> 
+          RequestHeader 
+            (BS.unpack $ original k)
+            (BS.unpack v)
+

@@ -100,6 +100,7 @@ instance
           (rawPathInfo req)
           (remoteHost req)
           userId
+          reqHeaders
       for_ logModes (logger pool requestLog)
       app req respK
    where 
