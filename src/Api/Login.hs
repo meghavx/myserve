@@ -11,12 +11,7 @@ module Api.Login (Login, login) where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
-import Data.Aeson 
-  ( FromJSON (..)
-  , ToJSON
-  , withObject
-  , (.:)
-  )
+import Data.Aeson (FromJSON (..), ToJSON, withObject, (.:))
 import Data.Maybe (isJust)
 import Data.Password.Argon2
   ( PasswordCheck (..)
@@ -61,10 +56,7 @@ type Login =
     :> ReqBody '[JSON] LoginRequest
     :> Post '[JSON] LoginResponse
 
-data LoginRequest = LoginRequest 
-  { userId' :: Text
-  , password' :: Text
-  }
+data LoginRequest = LoginRequest {userId' :: Text, password' :: Text}
 
 instance FromJSON LoginRequest where
   parseJSON = withObject "LoginRequest" $ 
@@ -73,9 +65,7 @@ instance FromJSON LoginRequest where
         <*> (o .: "userId") 
         <*> (o .: "password")
 
-data LoginResponse = LoginResponse 
-  { authToken :: UUID
-  }
+data LoginResponse = LoginResponse {authToken :: UUID}
   deriving (Generic, ToJSON)
 
 login :: LoginRequest -> MyServeHandler LoginResponse

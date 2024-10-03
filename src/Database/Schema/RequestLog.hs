@@ -9,11 +9,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
-module Database.Schema.RequestLog
-  ( RequestLog (..)
-  , requestLogTable
-  , mkRequestLog
-  ) where
+module Database.Schema.RequestLog (RequestLog (..), requestLogTable, mkRequestLog) where
 
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Data.ByteString (ByteString)

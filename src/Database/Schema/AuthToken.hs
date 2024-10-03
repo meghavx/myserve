@@ -7,11 +7,11 @@ module Database.Schema.AuthToken
   , createdByField
   ) where
 
-import Data.Text (Text)
-import Data.UUID (UUID)
-import Data.Time (UTCTime)
-import GHC.Generics (Generic)
 import Data.Aeson (ToJSON)
+import Data.Text (Text)
+import Data.Time (UTCTime)
+import Data.UUID (UUID)
+import GHC.Generics (Generic)
 import qualified Orville.PostgreSQL as O
 
 data AuthToken = AuthToken

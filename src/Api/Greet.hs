@@ -12,7 +12,11 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Handler (MyServeHandler)
 import LogRequest (LogMode (..), LogRequest)
-import Servant (Get, JSON, (:>))
+import Servant
+  ( Get
+  , JSON
+  , (:>)
+  )
 
 type Greet =
   "v1"
@@ -21,9 +25,7 @@ type Greet =
     :> WithTokenAuth KeepToken
     :> Get '[JSON] GreetResponse
 
-data GreetResponse = GreetResponse 
-  { welcomeMessage :: Text
-  }
+data GreetResponse = GreetResponse {welcomeMessage :: Text}
   deriving (Generic, ToJSON)
 
 -- | Greet a user

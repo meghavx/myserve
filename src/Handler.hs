@@ -1,11 +1,7 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Handler 
-  ( HandlerM
-  , toServantHandler
-  , MyServeHandler
-  ) where
+module Handler (HandlerM, toServantHandler, MyServeHandler) where
 
 import Control.Monad.Error.Class (MonadError)
 import Control.Monad.IO.Class (MonadIO)
@@ -34,5 +30,6 @@ newtype HandlerM env a = HandlerM
     )
 
 -- | Convert a HandlerM action to a Servant.Handler action
-toServantHandler :: env -> HandlerM env a -> Servant.Handler a
+toServantHandler
+  :: env -> HandlerM env a -> Servant.Handler a
 toServantHandler env handler = runReaderT (runHandlerM handler) env

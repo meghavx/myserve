@@ -21,10 +21,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (getCurrentTime)
 import Database.Class (HasDb (runDb))
-import Database.Schema 
-  ( User (..)
-  , userTable
-  )
+import Database.Schema (User (..), userTable)
 import GHC.Generics (Generic)
 import Handler (MyServeHandler)
 import Servant
@@ -49,9 +46,7 @@ type Register =
     :> Post '[JSON] NoContent
 
 data RegisterRequest = RegisterRequest
-  { requestedUserId :: Text
-  , password :: Text 
-  }
+  {requestedUserId :: Text, password :: Text}
   deriving (Generic, FromJSON)
 
 register

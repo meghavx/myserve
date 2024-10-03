@@ -1,10 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Database.Schema.User 
-  ( User (..)
-  , userTable
-  ) where
+module Database.Schema.User (User (..), userTable) where
 
 import Data.Text (Text)
 import Data.Time (UTCTime)

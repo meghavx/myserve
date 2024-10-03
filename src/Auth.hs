@@ -8,11 +8,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Auth
-  ( WithTokenAuth
-  , UserId
-  , PostAuth (..)
-  ) where
+module Auth (WithTokenAuth, UserId, PostAuth (..)) where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class (liftIO)
