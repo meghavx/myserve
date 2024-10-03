@@ -9,3 +9,4 @@ cabal.project.local
 .stack/
 jmeter.log
 *~
+.vscode
